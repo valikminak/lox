@@ -5,8 +5,8 @@ mod evaluate;
 
 fn main() {
     println!("Hello, Lox!");
-    let source = reader::read_source("somefile.lox");
-    let tokens = tokenize::tokenize(source);
-    let ast = parser::parse(tokens);
-    let out = evaluate::evaluate(ast);
+    let source = reader::read_source("somefile.lox").unwrap();
+    let tokens = tokenize::tokenize(source).unwrap();
+    let ast = parser::parse(tokens).unwrap();
+    let out = evaluate::evaluate(ast).unwrap();
 }
