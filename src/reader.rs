@@ -1,10 +1,22 @@
-pub type Source = ();
+pub struct Source {
+    pub contents: String,
+}
 
-pub type Error = ();
+#[derive(Debug)]
+pub struct Error {
+    msg: String,
+}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Error {
+        Error { msg: format!("{}", e) }
+    }
+}
 
 pub fn read_source(filename: &str) -> Result<Source, Error> {
     println!("Reading source");
-    Ok(())
+    let contents = std::fs::read_to_string(filename)?;
+    Ok(Source { contents })
 }
 
 #[cfg(test)]

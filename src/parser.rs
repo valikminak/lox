@@ -1,10 +1,15 @@
 use crate::tokenize::Tokens;
 
-pub type AST = (); // roughly playing the same role as Python’s None
-pub type Error = ();
-pub fn parse(tokens: Tokens) -> Result<AST, Error> {
+pub struct AST {}
+
+#[derive(Debug)]
+pub struct Error {} 
+
+// pub type Error = ();  // roughly playing the same role as Python’s None
+
+pub fn parse(_tokens: Tokens) -> Result<AST, Error> {
     println!("Parsing");
-    Ok(())
+    Ok(AST {})
 }
 
 #[cfg(test)]
