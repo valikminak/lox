@@ -149,6 +149,12 @@ impl Scanner {
         true
     }
 
+    fn lexeme(&self) -> String {
+        // return the current lexeme as a string
+        self.source[self.start..self.current].iter().collect()
+    }
+
+
     fn add_token(&mut self, toktype: TokenType) {
         self.add_token_with_literal(toktype, Literal::None);
     }
@@ -162,9 +168,7 @@ impl Scanner {
     }
 
     fn add_token_with_literal(&mut self, toktype: TokenType, literal: Literal) {
-        let text: String = self.source[self.start..self.current].iter().collect();
-        self.tokens
-            .push(Token::new(toktype, text, literal, self.line));
+        self.tokens.push(Token::new(toktype, self.lexeme(), literal, self.line));
     }
 
     fn scan_token(&mut self) {
@@ -260,8 +264,7 @@ impl Scanner {
                 self.advance();
             }
         }
-        let lexeme: String = self.source[self.start..self.current].iter().collect();
-        let literal = Literal::Num(lexeme.parse().unwrap());
+        let literal = Literal::Num(self.lexeme().parse().unwrap());
         self.add_token_with_literal(TokenType::Number, literal);
     }
 
@@ -269,10 +272,7 @@ impl Scanner {
         while self.peek().is_alphanumeric() || self.peek() == '_' {
             self.advance();
         }
-        // Lookup keywords.
-        let lexeme: String = self.source[self.start..self.current].iter().collect();
-
-        let toktype = match &lexeme[..] {
+        let toktype = match &self.lexeme()[..] {
             "and" => TokenType::And,
             "class" => TokenType::Class,
             "else" => TokenType::Else,
