@@ -4,6 +4,7 @@ mod evaluate;
 mod parser;
 mod reader;
 mod tokenize;
+mod ast;
 
 // top-level error
 #[derive(Debug)]
@@ -58,6 +59,7 @@ fn run_prompt() {
 
 fn run(source: reader::Source) -> Result<(), Error> {
     let tokens = tokenize::tokenize(source)?;
+    println!("tokens: {:?}", tokens);
     let ast = parser::parse(tokens)?;
     let _out = evaluate::evaluate(ast)?;
     Ok(())

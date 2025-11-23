@@ -50,6 +50,8 @@ pub enum TokenType {
     Eof,
 }
 
+
+
 #[derive(Debug, PartialEq)]
 pub enum Literal {
     Str(String),
@@ -62,7 +64,6 @@ pub struct Token {
     pub toktype: TokenType,
     pub lexeme: String,
     pub literal: Literal,
-    // literal: Object
     pub line: usize,
 }
 
@@ -88,7 +89,12 @@ pub struct Tokens {
 }
 
 #[derive(Debug)]
-pub struct Error {}
+enum ScanError {
+    UnexpectedCharacter { line: usize, character: char },
+}
+#[derive(Debug)]
+pub struct Error (Vec<ScanError>);
+
 
 struct Scanner {
     // we're converting the input source text into a Vec<char>.
@@ -101,6 +107,7 @@ struct Scanner {
     start: usize,
     current: usize,
     line: usize,
+    errors: Vec<ScanError>,
 }
 
 impl Scanner {
@@ -111,7 +118,12 @@ impl Scanner {
             start: 0,
             current: 0,
             line: 1,
+            errors: Vec::new(),
         }
+    }
+
+    fn error(&mut self, err: ScanError) {
+        self.errors.push(err);
     }
 
     fn is_at_end(&self) -> bool {
@@ -127,9 +139,13 @@ impl Scanner {
         self.tokens
             .push(Token::new(TokenType::Eof, "", Literal::None, self.line));
 
-        Ok(Tokens {
-            tokens: self.tokens,
-        })
+        if self.errors.len() == 0 {
+            Ok(Tokens {
+                tokens: self.tokens,
+            })
+        }else{
+            Err(Error(self.errors))
+        }
     }
 
     fn advance(&mut self) -> char {
@@ -154,7 +170,6 @@ impl Scanner {
         self.source[self.start..self.current].iter().collect()
     }
 
-
     fn add_token(&mut self, toktype: TokenType) {
         self.add_token_with_literal(toktype, Literal::None);
     }
@@ -168,7 +183,8 @@ impl Scanner {
     }
 
     fn add_token_with_literal(&mut self, toktype: TokenType, literal: Literal) {
-        self.tokens.push(Token::new(toktype, self.lexeme(), literal, self.line));
+        self.tokens
+            .push(Token::new(toktype, self.lexeme(), literal, self.line));
     }
 
     fn scan_token(&mut self) {
@@ -233,7 +249,9 @@ impl Scanner {
                 self.number();
             }
             c if c.is_alphabetic() => self.identifier(),
-            _ => todo!(),
+            e => {
+                self.errors.push(ScanError::UnexpectedCharacter {line: self.line, character: e});
+            }
         }
     }
 
@@ -295,10 +313,9 @@ impl Scanner {
     }
 }
 
-pub fn tokenize(_source: Source) -> Result<Tokens, Error> {
+pub fn tokenize(source: Source) -> Result<Tokens, Error> {
     println!("Tokenizing");
-    let tokens = vec![];
-    Ok(Tokens { tokens })
+    Scanner::new(&source.contents).scan_tokens()
 }
 
 #[cfg(test)]
@@ -430,7 +447,6 @@ mod tests {
                 Token::new(TokenType::True, "true", Literal::None, 1),
                 Token::new(TokenType::Var, "var", Literal::None, 1),
                 Token::new(TokenType::While, "while", Literal::None, 1),
-
                 Token::new(TokenType::Eof, "", Literal::None, 1),
             ]
         );
