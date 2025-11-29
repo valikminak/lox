@@ -1,61 +1,114 @@
 use crate::tokenize::Token;
-use crate::tokenize::Literal;
 
-pub enum Expr {
-    // Literal { value: Literal },
-    Num {value: f64},
-    Str {value: String},
-    Bool {value: bool},
-    Nil,
-
-    Binary {left: Box<Expr>, operator: Token, right: Box<Expr>},
-    Unary { operator: Token, right: Box<Expr> },
-    Grouping { expression: Box<Expr> },
+#[derive(Debug, PartialEq)]
+pub struct AST {
+    pub top: Option<Expr>, // could have an empty program
 }
 
+#[derive(Debug, PartialEq)]
+pub enum Operator {
+    OAdd,
+    OSub,
+    OMul,
+    ODiv,
+    OLt,
+    OLe,
+    OGt,
+    OGe,
+    OEq,
+    ONe,
+    ONot,
+    OAnd,
+    OOr,
+}
+
+use Operator::*;
+
+#[derive(Debug, PartialEq)]
+pub enum Expr {
+    // Literal { value: Literal },
+    ENumber {value: String},
+    EString {value: String},
+    EBool {value: bool},
+    ENil,
+
+    EBinary {left: Box<Expr>, op: Operator, right: Box<Expr>},
+    EUnary { op: Operator, right: Box<Expr> },
+    EGrouping { expr: Box<Expr> },
+}
+
+use Expr::*;
+
 impl Expr {
-    fn num(value: f64) -> Expr {
-        Expr::Num {value}
+    pub fn number(value: impl Into<String>) -> Expr {
+        ENumber {value: value.into()}
     }
-    fn str(value: impl Into<String>) -> Expr {
-        Expr::Str {value: value.into()}
+    pub fn string(value: impl Into<String>) -> Expr {
+        EString {value: value.into()}
     }
 
-    fn bool(value: bool) -> Expr {
-        Expr::Bool {value}
+    pub fn bool(value: bool) -> Expr {
+        EBool {value}
     }
-    fn nil() -> Expr {
-        Expr::Nil
+    pub fn nil() -> Expr {
+        ENil
     }
 
     // the .into puts the value in the Box in this case
 
-    fn binary(left: Expr, operator: Token, right: Expr) -> Expr {
-        Expr::Binary {left: left.into(), operator, right: right.into()}
+    pub fn binary(left: Expr, op: Operator, right: Expr) -> Expr {
+        EBinary {left: left.into(), op, right: right.into()}
     }
 
-    fn unary(operator: Token, right: Expr) -> Expr {
-        Expr::Unary {operator, right: right.into()}
+    pub fn unary(op: Operator, right: Expr) -> Expr {
+        EUnary {op, right: right.into()}
     }
 
-    fn grouping(expression: Expr) -> Expr {
-        Expr::Grouping { expression: expression.into() }
+    pub fn grouping(expr: Expr) -> Expr {
+        EGrouping { expr: expr.into() }
+    }
+}
+
+pub fn format_op(o: &Operator) -> &'static str {
+    match o {
+        OAdd => "+",
+        OSub => "-",
+        OMul => "*",
+        ODiv => "/",
+        OLt => "<",
+        OLe => ">",
+        OGt => ">",
+        OGe => ">=",
+        OEq => "==",
+        ONe => "!=",
+        OAnd => "and",
+        OOr => "or",
+        ONot => "!",
     }
 }
 
 pub fn format_expr(e: &Expr) -> String {
     match e {
-        Expr::Num { value } => format!("{}", value),
-        Expr::Str { value } => format!("\"{}\"", value),
-        Expr::Bool { value } => format!("{}", value),
-        Expr::Nil => "nil".to_string(),
-        Expr::Binary { left, operator, right } => {
-            format!("({} {} {})", operator.lexeme, format_expr(left), format_expr(right))
+        ENumber { value } => format!("{}", value),
+        EString { value } => format!("\"{}\"", value),
+        EBool { value } => format!("{}", value),
+        ENil => "nil".to_string(),
+        EBinary { left, op, right } => {
+            format!("({} {} {})", format_op(op), format_expr(left), format_expr(right))
         },
-        Expr::Unary { operator, right } => {
-            format!("({}{})", operator.lexeme, format_expr(right))
+        EUnary { op, right } => {
+            format!("({}{})", format_op(op), format_expr(right))
         },
-        Expr::Grouping { expression } => format!("group ({})", format_expr(expression) ),
+        EGrouping { expr } => format!("group ({})", format_expr(expr) ),
 
     }
+}
+
+pub fn main() {
+    let expression = Expr::binary(
+        Expr::unary(Operator::OSub, Expr::number("123")),
+        OMul,
+        Expr::grouping(Expr::number("45.67")),
+    );
+    println!("{}", format_expr(&expression));
 }
