@@ -89,8 +89,9 @@ pub struct Tokens {
 }
 
 #[derive(Debug)]
-enum ScanError {
-    UnexpectedCharacter { line: usize, character: char },
+pub enum ScanError {
+    UnexpectedCharacter { line: usize, ch: char },
+    UnterminatedString { line: usize },
 }
 #[derive(Debug)]
 pub struct Error (Vec<ScanError>);
@@ -250,7 +251,7 @@ impl Scanner {
             }
             c if c.is_alphabetic() => self.identifier(),
             e => {
-                self.errors.push(ScanError::UnexpectedCharacter {line: self.line, character: e});
+                self.errors.push(ScanError::UnexpectedCharacter {line: self.line, ch: e});
             }
         }
     }

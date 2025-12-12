@@ -5,11 +5,12 @@ mod parser;
 mod reader;
 mod tokenize;
 mod ast;
+mod environ;
 
 // top-level error
 #[derive(Debug)]
 pub enum Error {
-    Reade(reader::Error),
+    Read(reader::Error),
     Tokenize(tokenize::Error),
     Parse(parser::Error),
     Evaluate(evaluate::Error),
@@ -17,7 +18,7 @@ pub enum Error {
 
 impl From<reader::Error> for Error {
     fn from(error: reader::Error) -> Error {
-        Error::Reade(error)
+        Error::Read(error)
     }
 }
 
@@ -39,6 +40,49 @@ impl From<evaluate::Error> for Error {
     }
 }
 
+fn report_errors(err: Error) {
+    match err {
+        Error::Read(e) => {
+            eprintln!("{}", e.msg);
+        }
+        Error::Tokenize(e) => {
+            use crate::tokenize::ScanError;
+            // for scan_error in e.iter() {
+            //     match scan_error {
+            //         ScanError::UnexpectedCharacter { line, ch } => {
+            //             eprintln!("Line {line}: Unexpected character {ch:?}");
+            //         }
+            //         ScanError::UnterminatedString { line } => {
+            //             eprintln!("Line {line}: Unterminated string");
+            //         }
+            //     }
+            // }
+        }
+        Error::Parse(e) => {
+            use crate::parser::Error;
+            match e {
+                Error::SyntaxError { line, msg } => {
+                    eprintln!("Line {line}: Syntax error: {msg}");
+                }
+            }
+        }
+        Error::Evaluate(e) => {
+            use crate::evaluate::Error::*;
+            match e {
+                ZeroDivision => {
+                    eprintln!("Division by zero");
+                }
+                UnsupportedBinOp(left, op, right) => {
+                    eprintln!("Unsupported operation: {left:?} {op} {right:?}");
+                }
+                UnsupportedUnaryOp(op, value) => {
+                    eprintln!("Unsupported operation: {op}{value:?}");
+                }
+            }
+        }
+    }
+}
+
 fn run_prompt() {
     let mut stdout = std::io::stdout();
     let stdin = std::io::stdin();
@@ -50,8 +94,8 @@ fn run_prompt() {
         let source = reader::Source {contents: buffer};
         match run(source) {
             Ok(_) => {},
-            Err(error) => {
-                println!("{error:?}")
+            Err(e) => {
+                report_errors(e);
             }
         }
     }
@@ -61,7 +105,8 @@ fn run(source: reader::Source) -> Result<(), Error> {
     let tokens = tokenize::tokenize(source)?;
     println!("tokens: {:?}", tokens);
     let ast = parser::parse(tokens)?;
-    let _out = evaluate::evaluate(ast)?;
+    println!("ast: {:?}", ast);
+    evaluate::evaluate(ast)?;
     Ok(())
 }
 
@@ -83,7 +128,7 @@ fn main() {
                 println!("It worked")
             }
             Err(e) => {
-                println!("Failed: {e:?}")
+                report_errors(e);
             }
         }
     } else {
