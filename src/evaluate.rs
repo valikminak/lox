@@ -51,7 +51,7 @@ impl Interpreter {
         Interpreter{top_level: Environment::new()}
     }
 
-    pub fn interpret(&mut self,  ast: AST) -> Result<Output, Error> {
+    pub fn evaluate(&mut self,  ast: AST) -> Result<Output, Error> {
         execute_statements(&ast.top, &mut self.top_level)?;
         Ok(())
     }

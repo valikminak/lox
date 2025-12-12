@@ -86,13 +86,14 @@ fn report_errors(err: Error) {
 fn run_prompt() {
     let mut stdout = std::io::stdout();
     let stdin = std::io::stdin();
+    let mut interpreter = evaluate::Interpreter::new();
     loop {
         stdout.write_all(b"> ").unwrap();
         stdout.flush().unwrap();
         let mut buffer = String::new();
         stdin.read_line(&mut buffer).unwrap();
         let source = reader::Source {contents: buffer};
-        match run(source) {
+        match run_interp(&mut interpreter, source) {
             Ok(_) => {},
             Err(e) => {
                 report_errors(e);
@@ -102,11 +103,16 @@ fn run_prompt() {
 }
 
 fn run(source: reader::Source) -> Result<(), Error> {
+    let mut interpreter = evaluate::Interpreter::new();
+    run_interp(&mut interpreter, source)
+}
+
+fn run_interp(interp: &mut evaluate::Interpreter, source: reader::Source) -> Result<(), Error> {
     let tokens = tokenize::tokenize(source)?;
     println!("tokens: {:?}", tokens);
     let ast = parser::parse(tokens)?;
     println!("ast: {:?}", ast);
-    evaluate::evaluate(ast)?;
+    interp.evaluate(ast)?;
     Ok(())
 }
 
