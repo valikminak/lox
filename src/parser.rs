@@ -156,6 +156,23 @@ impl Parser {
     }
 
     pub fn parse_expression(&mut self) -> Result<Expr, Error> {
+        self.parse_assignment()
+    }
+
+    pub fn parse_assignment(&mut self) -> Result<Expr, Error> {
+        let expr = self.parse_binary()?;
+        if self.accept(TEqual) {
+            let value = self.parse_assignment()?;
+            if let Expr::EVariable {name} = expr {
+                return Ok(Expr::assign(name, value));
+            }else {
+                panic!("invalid assignment target");
+            }
+        }
+        Ok(expr)
+    }
+
+    pub fn parse_binary(&mut self) -> Result<Expr, Error> {
         let left = self.parse_unary()?;
         if self.accepts([
             TPlus, TMinus, TStar, TSlash, TLess, TLessEqual, TGreater, TGreaterEqual, TEqualEqual, TBangEqual

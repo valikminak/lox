@@ -59,6 +59,7 @@ pub enum Expr {
     EUnary { op: Operator, right: Box<Expr> },
     EGrouping { expr: Box<Expr> },
     EVariable {name: String},
+    EAssign {name: String, value: Box<Expr>}
 }
 
 use Expr::*;
@@ -94,6 +95,10 @@ impl Expr {
 
     pub fn variable(name: impl Into<String>) -> Expr {
         EVariable {name: name.into()}
+    }
+
+    pub fn assign(name: impl Into<String>, value: Expr) -> Expr {
+        EAssign {name: name.into(), value: value.into()}
     }
 }
 
@@ -154,6 +159,9 @@ pub fn format_expr(e: &Expr) -> String {
             format!("({}{})", format_op(op), format_expr(right))
         },
         EGrouping { expr } => format!("group ({})", format_expr(expr) ),
+        EAssign { name, value } => {
+            format!("(assign {} {})", name, format_expr(value))
+        }
 
     }
 }

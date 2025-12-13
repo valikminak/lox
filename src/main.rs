@@ -6,6 +6,7 @@ mod reader;
 mod tokenize;
 mod ast;
 mod environ;
+mod tokenize2;
 
 // top-level error
 #[derive(Debug)]
@@ -108,11 +109,11 @@ fn run(source: reader::Source) -> Result<(), Error> {
 }
 
 fn run_interp(interp: &mut evaluate::Interpreter, source: reader::Source) -> Result<(), Error> {
-    let tokens = tokenize::tokenize(source)?;
-    println!("tokens: {:?}", tokens);
-    let ast = parser::parse(tokens)?;
-    println!("ast: {:?}", ast);
-    interp.evaluate(ast)?;
+    let tokens = tokenize2::tokenize(source);
+    // println!("tokens: {:?}", tokens);
+    // let ast = parser::parse(tokens)?;
+    // println!("ast: {:?}", ast);
+    // interp.evaluate(ast)?;
     Ok(())
 }
 

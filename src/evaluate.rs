@@ -1,4 +1,5 @@
 use std::fmt::Formatter;
+use std::rc::Rc;
 use crate::ast::{Expr, AST, Operator, Stmt};
 use crate::evaluate::LoxValue::LBoolean;
 
@@ -43,28 +44,28 @@ pub enum Error {
 }
 
 pub struct Interpreter {
-    top_level: Environment,
+    top_level: Rc<Environment>,
 }
 
 impl Interpreter {
     pub fn new() -> Interpreter {
-        Interpreter{top_level: Environment::new()}
+        Interpreter{top_level: Environment::new(None)}
     }
 
     pub fn evaluate(&mut self,  ast: AST) -> Result<Output, Error> {
-        execute_statements(&ast.top, &mut self.top_level)?;
+        execute_statements(&ast.top, &self.top_level)?;
         Ok(())
     }
 }
 
 pub fn evaluate(ast: AST) -> Result<Output, Error> {
     println!("Evaluating");
-    let mut environ = Environment::new();
-    execute_statements(&ast.top, &mut environ)?;
+    let mut environ = Environment::new(None);
+    execute_statements(&ast.top, &environ)?;
     Ok(())
 }
 
-pub fn execute_statements(statements: &Vec<Stmt>, environ: &mut Environment) -> Result<(), Error> {
+pub fn execute_statements(statements: &Vec<Stmt>, environ: &Rc<Environment>) -> Result<(), Error> {
     // execute zero or more statements
     for stmt in statements.iter() {
         execute_statement(stmt, environ)?;
@@ -72,7 +73,7 @@ pub fn execute_statements(statements: &Vec<Stmt>, environ: &mut Environment) -> 
     Ok(())
 }
 
-pub fn execute_statement(stmt: &Stmt, environ: &mut Environment) -> Result<(), Error> {
+pub fn execute_statement(stmt: &Stmt, environ: &Rc<Environment>) -> Result<(), Error> {
     // execute a single statement
     match stmt {
         Stmt::SPrint{expr} => {
@@ -94,7 +95,7 @@ pub fn execute_statement(stmt: &Stmt, environ: &mut Environment) -> Result<(), E
     Ok(()) // statements don't produce values
 }
 
-pub fn evaluate_expression(expr: &Expr, environ: &Environment) -> Result<LoxValue, Error> {
+pub fn evaluate_expression(expr: &Expr, environ: &Rc<Environment>) -> Result<LoxValue, Error> {
     Ok(match expr {
         Expr::ENumber {value} => {
             LoxValue::LNumber(value.parse().unwrap())
@@ -156,6 +157,11 @@ pub fn evaluate_expression(expr: &Expr, environ: &Environment) -> Result<LoxValu
         }
         Expr::EGrouping { expr} => {
             evaluate_expression(expr, environ)?
+        },
+        Expr::EAssign { name, value } => {
+            let v = evaluate_expression(value, environ)?;
+            environ.assign(name, v.clone());
+            v
         }
     })
 }
